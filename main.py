@@ -1,15 +1,4 @@
 """
-High-pass birdcage coil (16 legs) for Ansys HFSS via PyAEDT
-============================================================
-
-Builds:
-  * zero-thickness PEC cylinder sheet, cut into 16 legs + 2 end rings
-  * 16 capacitor gaps per end ring (caps sit between the legs)
-  * 2 feed positions in the bottom ring (default 0 deg and 90 deg) using the
-    split-capacitor match:   ring --|C1|-- island --|C2 || Port|-- ring
-    (C2 and the port share the C2 gap, each over half the ring width)
-  * optional PEC shield, air region with radiation boundary, setup + sweep
-
 Two modes (CAPS_AS_PORTS):
   False -> every capacitor is a lumped RLC (final, "physical" model)
   True  -> every capacitor is a lumped port (for Circuit co-simulation /
@@ -51,7 +40,7 @@ F0_MHZ = 127.7       # 3 T proton frequency; 297.2 for 7 T
 C_RING_PF = 20.0     # start value - replace with your tuned value
 CAPS_AS_PORTS = False
 
-AEDT_VERSION = "2025.1"
+AEDT_VERSION = "2023.2"
 NON_GRAPHICAL = False
 
 # ----------------------------------------------------------------------------

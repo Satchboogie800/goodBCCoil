@@ -1,0 +1,22 @@
+ 
+Ansys Electronics Desktop Version 2023.2.0, Build: 2023-05-16 22:25:19
+Location: C:\Program Files\AnsysEM\v232\Win64\ansysedt.exe
+Non Graphical Mode: No Project??
+Starting Batch Run: 12:31:29  Okt 20, 2026
+Running as user: HABICHT\teds
+Temp directory: C:\Users\tetadmin\AppData\Local\Temp
+Project directory: C:\Users\teds\Documents\ProjectData\AnsysFiles\AnsysSource
+A solution exists; do you want to create a non model object?
+
+A solution exists; do you want to create a non model object?
+
+[error] 0.1277MHz does not exist in Freq sweep or the combination with other intrinsic variable has no soution!
+[error] 0.1243GHz does not exist in Freq sweep or the combination with other intrinsic variable has no soution!
+Delete all plots in this quantity folder?
+[error] A geometry must be selected to generate a plot.
+Delete all plots in this quantity folder?
+Delete all plots in this quantity folder?
+[error] While parsing expression: "C_ring(1+n)/n", an error was found near character 11. 'C_ring' is not a function name.
+
+[error] While parsing expression: "C_ring(1+n)/n", an error was found near character 11. 'C_ring' is not a function name.
+
