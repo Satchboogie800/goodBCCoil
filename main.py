@@ -1,58 +1,28 @@
-"""
-Two modes (CAPS_AS_PORTS):
-  False -> every capacitor is a lumped RLC (final, "physical" model)
-  True  -> every capacitor is a lumped port (for Circuit co-simulation /
-           tuning; afterwards write the tuned values back and switch to False)
-
-Written for ansys-aedt-core (PyAEDT >= 0.11, `from ansys.aedt.core import Hfss`).
-NOT tested against a running AEDT here - argument names have changed between
-PyAEDT releases, so if a call fails, check its signature in the API docs for
-your installed version.
-
-Geometry convention
--------------------
-Coil axis = z, coil from z = 0 to z = L_COIL.
-Leg-gap boxes are centred at k*22.5 deg  -> legs sit at 11.25 + k*22.5 deg,
-end-ring capacitors sit at k*22.5 deg (between the legs).
-All lengths in mm.
-"""
-
 import math
 from ansys.aedt.core import Hfss
-
-# ----------------------------------------------------------------------------
-# Parameters
-# ----------------------------------------------------------------------------
+# Initial Parameters
 N_LEGS = 16
 R = 150.0           # coil radius
 L_COIL = 250.0      # total coil length incl. end rings
 W_RING = 20.0       # end-ring width (axial)
 W_LEG = 20.0        # leg width (arc length)
-G_CAP = 2.5         # capacitor gap length (along current direction)
+G_CAP = 4         # capacitor gap length (along current direction)
 S_ISLAND = 4.0      # conductor island between C1 and C2 at the feeds
 FEED_ANGLES = [0.0, 90.0]   # feed positions in the bottom ring (deg)
 
-USE_SHIELD = True
-R_SHIELD = 180.0
-L_SHIELD = 350.0
-
-F0_MHZ = 127.7       # 3 T proton frequency; 297.2 for 7 T
-C_RING_PF = 20.0     # start value - replace with your tuned value
-CAPS_AS_PORTS = False
+F0_MHZ = 64       # (~T*42MHz)
+C_RING_PF = 105     # Initial tuning capacitor value in pF
 
 AEDT_VERSION = "2023.2"
-NON_GRAPHICAL = False
 
-# ----------------------------------------------------------------------------
-# Derived quantities
-# ----------------------------------------------------------------------------
+
+# Derived Parameters
 DPHI = 360.0 / N_LEGS
 # width of the leg-gap box (chord), see derivation: b = 2R sin(pi/N - w/2R)
 B_BOX = 2 * R * math.sin(math.pi / N_LEGS - W_LEG / (2 * R))
 L_LEGS = L_COIL - 2 * W_RING
 
 assert S_ISLAND + 2 * G_CAP < B_BOX, "feed region wider than the leg gap"
-
 
 def pt(theta_deg, y, z):
     """Point on the cylinder at frame angle theta, offset y (chord dir.), height z."""
@@ -64,26 +34,25 @@ def pt(theta_deg, y, z):
 # Launch HFSS
 # ----------------------------------------------------------------------------
 hfss = Hfss(
-    project="Birdcage",
+    project="Birdcage_2",
     design="HP_Birdcage_16",
     solution_type="Modal",
     version=AEDT_VERSION,
-    non_graphical=NON_GRAPHICAL,
-    new_desktop=True,
+    non_graphical=False,
+    new_desktop=False,
 )
 hfss.modeler.model_units = "mm"
 
 # Capacitor values as design variables -> tunable with Optimetrics
 hfss["C_ring"] = f"{C_RING_PF}pF"
-hfss["C1"] = "1.2*C_ring"   # series C1*C2/(C1+C2) = C_ring at the start
-hfss["C2"] = "6*C_ring"     # larger C2 -> lower impedance seen by the port
-
+hfss["n"] = "0.3" # ratio of C1 and C2, use this for matching the ports impedance
+hfss["C1"] = "1.2*C_ring"   # C1 and C2 are adjusted by n (relation changes the port impedance,
+hfss["C2"] = "C1*n"     #      the total value of C1 and C2 stays equal to C_ring)
 
 # ----------------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------------
 def cylinder_sheet(name, r, z0, h):
-    """Open cylindrical sheet (no caps) of radius r from z0 to z0+h."""
     circ = hfss.modeler.create_circle(
         "XY", [0, 0, z0], r, is_covered=False, name=name
     )
@@ -112,16 +81,6 @@ def int_line(theta, y1, y2, z):
 
 
 def assign_cap(sheet, line, cap_var):
-    if CAPS_AS_PORTS:
-        hfss.lumped_port(
-            assignment=sheet.name,
-            create_port_sheet=False,
-            integration_line=line,
-            impedance=50,
-            name=f"P_{sheet.name}",
-            renormalize=True,
-        )
-        return
     bnd = hfss.assign_lumped_rlc_to_sheet(
         sheet.name,
         start_direction=line,
@@ -205,49 +164,11 @@ for sheet, line, pname in port_jobs:
     )
 
 # ----------------------------------------------------------------------------
-# Shield, air region, radiation boundary
-# ----------------------------------------------------------------------------
-if USE_SHIELD:
-    shield = cylinder_sheet("Shield", R_SHIELD, (L_COIL - L_SHIELD) / 2, L_SHIELD)
-    hfss.assign_perfecte_to_sheets(shield.name, name="PEC_Shield")
-
-# Head model: import / place it here (e.g. hfss.modeler.import_3d_cad(...))
-# and assign tissue materials before solving.
-
-pad = 300  # mm; keep the boundary roughly lambda/4 away from the coil
-region = hfss.modeler.create_air_region(
-    x_pos=pad, y_pos=pad, z_pos=pad, x_neg=pad, y_neg=pad, z_neg=pad,
-    is_percentage=False,
-)
-hfss.assign_radiation_boundary_to_objects(region.name, name="Rad")
-
-# ----------------------------------------------------------------------------
 # Mesh refinement on gaps
 # ----------------------------------------------------------------------------
 hfss.mesh.assign_length_mesh(
     [s.name for s in gap_sheets], maximum_length=G_CAP / 2, name="GapMesh"
 )
-
-# ----------------------------------------------------------------------------
-# Setup + sweep
-# ----------------------------------------------------------------------------
-setup = hfss.create_setup("Setup1")
-setup.props["Frequency"] = f"{F0_MHZ}MHz"
-setup.props["MaximumPasses"] = 15
-setup.props["MaxDeltaS"] = 0.01
-setup.update()
-setup.create_frequency_sweep(
-    unit="MHz",
-    name="Sweep",
-    start_frequency=0.8 * F0_MHZ,
-    stop_frequency=1.2 * F0_MHZ,
-    sweep_type="Interpolating",
-)
-
-# Quadrature drive (ideal hybrid). Flip the sign of 90deg if B1+ comes out
-# weak in the centre (wrong rotation sense for your B0 direction).
-# Signature of edit_sources differs between versions - check yours:
-# hfss.edit_sources({"Feed1:1": ("1W", "0deg"), "Feed2:1": ("1W", "90deg")})
 
 hfss.save_project()
 hfss.release_desktop(close_projects=False, close_desktop=False)
