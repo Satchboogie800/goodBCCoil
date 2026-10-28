@@ -32,16 +32,34 @@ Delete all plots in this quantity folder?
 Delete all plots in this quantity folder?
 [error] PML Setup: The selection contains an object or face that is non-model.
 
+[warning] The project selected in the Project Window
+	C:/Users/teds/Documents/ProjectData/AnsysFiles/AnsysSource/Birdcage_2
+is the one that will be saved,
+but it is different from the one being edited in the Editing Window.
+
+Continue?
+[warning] The project cannot be saved, renamed or deleted while simulations are running or waiting in the queue.
+If you continue, all running and waiting simulations will be aborted.
+Do you want to continue?
+[error] While parsing expression: "z", an error was found near character 0. 'z' is not a defined variable name in this context.
+
+No sweep point, do you want to continue? Click 'Yes' to finish setup, click 'No' to stay in dialog.
+No sweep point, do you want to continue? Click 'Yes' to finish setup, click 'No' to stay in dialog.
+[warning] Some designs have been edited resulting in invalid solution data. This data will be deleted from the saved project.
+Do you want to proceed?
+[warning] Some designs have been edited resulting in invalid solution data. This data will be deleted from the saved project.
+Do you want to proceed?
+A solution exists; do you want to create a non model object?
+
+The project 'smallTest1' has been edited and/or solved. Do you want to save the changes?
+[warning] Some designs have been edited resulting in invalid solution data. This data will be deleted from the saved project.
+Do you want to proceed?
+Stopping Batch Run: 2:34:49  Okt 27, 2026
  
 Ansys Electronics Desktop Version 2023.2.0, Build: 2023-05-16 22:25:19
 Location: C:\Program Files\AnsysEM\v232\Win64\ansysedt.exe
 Non Graphical Mode: No Project??
-Starting Batch Run: 12:04:52  Okt 27, 2026
+Starting Batch Run: 12:53:15  Okt 28, 2026
 Running as user: HABICHT\teds
 Temp directory: C:\Users\tetadmin\AppData\Local\Temp
 Project directory: C:\Users\teds\Documents\ProjectData\AnsysFiles\AnsysSource
--- Message Window --
-      *Global - Messages
-        [info] GRPC server running on port: 64299. 
--- Message Window --
-Stopping Batch Run: 12:05:44  Okt 27, 2026

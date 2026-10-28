@@ -2,15 +2,13 @@ import math
 from ansys.aedt.core import Hfss
 # Initial Parameters
 N_LEGS = 16
-R = 150.0           # coil radius
-L_COIL = 250.0      # total coil length incl. end rings
+R = 145.0           # coil radius
+L_COIL = 290.0      # total coil length incl. end rings
 W_RING = 20.0       # end-ring width (axial)
 W_LEG = 20.0        # leg width (arc length)
 G_CAP = 4         # capacitor gap length (along current direction)
 S_ISLAND = 4.0      # conductor island between C1 and C2 at the feeds
-FEED_ANGLES = [0.0, 90.0]   # feed positions in the bottom ring (deg)
 
-F0_MHZ = 64       # (~T*42MHz)
 C_RING_PF = 105     # Initial tuning capacitor value in pF
 
 AEDT_VERSION = "2023.2"
@@ -34,8 +32,8 @@ def pt(theta_deg, y, z):
 # Launch HFSS
 # ----------------------------------------------------------------------------
 hfss = Hfss(
-    project="Birdcage_2",
-    design="HP_Birdcage_16",
+    project="Birdcage_29x29",
+    design="HP_Birdcage_16_29x29",
     solution_type="Modal",
     version=AEDT_VERSION,
     non_graphical=False,
@@ -48,6 +46,8 @@ hfss["C_ring"] = f"{C_RING_PF}pF"
 hfss["n"] = "0.3" # ratio of C1 and C2, use this for matching the ports impedance
 hfss["C1"] = "1.2*C_ring"   # C1 and C2 are adjusted by n (relation changes the port impedance,
 hfss["C2"] = "C1*n"     #      the total value of C1 and C2 stays equal to C_ring)
+hfss["coilHeight"] = f"{L_COIL}mm"
+hfss["coilRadius"] = f"{R}mm"
 
 # ----------------------------------------------------------------------------
 # Helpers
@@ -116,7 +116,7 @@ for ring, z0 in rings.items():
     zmid = z0 + W_RING / 2
     for k in range(N_LEGS):
         th = k * DPHI
-        is_feed = ring == "Bot" and any(abs(th - f) < 1e-6 for f in FEED_ANGLES)
+        is_feed = ring == "Bot" and any(abs(th - f) < 1e-6 for f in [0.0, 90.0])
 
         if not is_feed:
             y1, y2 = -G_CAP / 2, G_CAP / 2
@@ -163,12 +163,6 @@ for sheet, line, pname in port_jobs:
         renormalize=True,
     )
 
-# ----------------------------------------------------------------------------
-# Mesh refinement on gaps
-# ----------------------------------------------------------------------------
-hfss.mesh.assign_length_mesh(
-    [s.name for s in gap_sheets], maximum_length=G_CAP / 2, name="GapMesh"
-)
 
 hfss.save_project()
 hfss.release_desktop(close_projects=False, close_desktop=False)
